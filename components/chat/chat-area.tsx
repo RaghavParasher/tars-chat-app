@@ -44,7 +44,7 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
             isCancelled = true;
             setActiveConversationId(null);
         };
-    }, [conversation._id, isSearchUser, dbUser?._id, createConversation]);
+    }, [conversation._id, isSearchUser, dbUser, createConversation]);
 
     const messages = useQuery(api.messages.getByConversation,
         activeConversationId ? { conversationId: activeConversationId } : "skip"
