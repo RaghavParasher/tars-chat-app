@@ -14,33 +14,37 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
     const [content, setContent] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // If conversation is actually a user (from search), we need to create/get the conversation first
-    const createConversation = useMutation(api.conversations.create);
+    const isSearchUser = !!conversation.clerkId;
     const [activeConversationId, setActiveConversationId] = useState<any>(null);
 
     useEffect(() => {
-        // Only set if we already have a conversation ID
-        if (conversation._id && !conversation._id.startsWith("users")) {
-            setActiveConversationId(conversation._id);
-            return;
-        }
+        let isCancelled = false;
 
-        // If it's a user, create/get conversation
-        if (conversation._id && conversation._id.startsWith("users") && dbUser) {
+        // Reset when selection changes
+        if (!isSearchUser) {
+            setActiveConversationId(conversation._id);
+        } else if (dbUser) {
             const initConv = async () => {
                 try {
                     const id = await createConversation({
                         participants: [dbUser._id, conversation._id],
                         isGroup: false
                     });
-                    setActiveConversationId(id);
+                    if (!isCancelled) {
+                        setActiveConversationId(id);
+                    }
                 } catch (error) {
                     console.error("Failed to initialize conversation:", error);
                 }
             };
             initConv();
         }
-    }, [conversation._id, dbUser?._id, createConversation]);
+
+        return () => {
+            isCancelled = true;
+            setActiveConversationId(null);
+        };
+    }, [conversation._id, isSearchUser, dbUser?._id, createConversation]);
 
     const messages = useQuery(api.messages.getByConversation,
         activeConversationId ? { conversationId: activeConversationId } : "skip"
@@ -102,8 +106,7 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
         return format(date, "MMM d, yyyy, h:mm a");
     };
 
-    const otherUser = conversation.otherParticipant ||
-        (conversation._id?.startsWith("users") ? conversation : null);
+    const otherUser = conversation.otherParticipant || (isSearchUser ? conversation : null);
 
     if (!activeConversationId || !otherUser) {
         return (
@@ -124,9 +127,9 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
                             ←
                         </button>
                     )}
-                    <img src={otherUser.imageUrl} className="w-10 h-10 rounded-full mr-3 border-2 border-white shadow-sm" alt={otherUser.name} />
+                    <img src={otherUser?.imageUrl} className="w-10 h-10 rounded-full mr-3 border-2 border-white shadow-sm" alt={otherUser?.name || "User"} />
                     <div>
-                        <h2 className="font-semibold text-slate-800 text-sm md:text-base">{otherUser.name}</h2>
+                        <h2 className="font-semibold text-slate-800 text-sm md:text-base">{otherUser?.name}</h2>
                         <p className="text-[10px] text-green-500 font-medium flex items-center">
                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse" /> Online
                         </p>
