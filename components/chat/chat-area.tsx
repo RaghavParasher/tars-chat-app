@@ -16,24 +16,31 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
 
     // If conversation is actually a user (from search), we need to create/get the conversation first
     const createConversation = useMutation(api.conversations.create);
-    const [activeConversationId, setActiveConversationId] = useState<any>(
-        conversation._id?.startsWith("users") ? null : conversation._id
-    );
+    const [activeConversationId, setActiveConversationId] = useState<any>(null);
 
     useEffect(() => {
-        if (conversation._id?.startsWith("users") && dbUser) {
+        // Only set if we already have a conversation ID
+        if (conversation._id && !conversation._id.startsWith("users")) {
+            setActiveConversationId(conversation._id);
+            return;
+        }
+
+        // If it's a user, create/get conversation
+        if (conversation._id && conversation._id.startsWith("users") && dbUser) {
             const initConv = async () => {
-                const id = await createConversation({
-                    participants: [dbUser._id, conversation._id],
-                    isGroup: false
-                });
-                setActiveConversationId(id);
+                try {
+                    const id = await createConversation({
+                        participants: [dbUser._id, conversation._id],
+                        isGroup: false
+                    });
+                    setActiveConversationId(id);
+                } catch (error) {
+                    console.error("Failed to initialize conversation:", error);
+                }
             };
             initConv();
-        } else {
-            setActiveConversationId(conversation._id);
         }
-    }, [conversation, dbUser, createConversation]);
+    }, [conversation._id, dbUser?._id, createConversation]);
 
     const messages = useQuery(api.messages.getByConversation,
         activeConversationId ? { conversationId: activeConversationId } : "skip"
@@ -95,7 +102,10 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
         return format(date, "MMM d, yyyy, h:mm a");
     };
 
-    if (!activeConversationId) {
+    const otherUser = conversation.otherParticipant ||
+        (conversation._id?.startsWith("users") ? conversation : null);
+
+    if (!activeConversationId || !otherUser) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 text-slate-400">
                 <div className="animate-pulse">Loading conversation...</div>
@@ -103,7 +113,6 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
         );
     }
 
-    const otherUser = conversation.otherParticipant || conversation;
     const isTyping = typingIndicators?.some(ti => ti.userId !== dbUser?._id);
 
     return (
