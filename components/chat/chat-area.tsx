@@ -51,6 +51,7 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
     );
 
     const sendMessage = useMutation(api.messages.send);
+    const createConversation = useMutation(api.conversations.create);
     const setTyping = useMutation(api.messages.setTypingIndicator);
     const markAsRead = useMutation(api.messages.markAsRead);
     const deleteMessage = useMutation(api.messages.remove);

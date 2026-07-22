@@ -33,16 +33,17 @@ export const create = mutation({
 export const get = query({
     args: { userId: v.id("users") },
     handler: async (ctx, args) => {
-        const conversations = await ctx.db
-            .query("conversations")
+        // Query the conversation memberships for this user using the by_userId index
+        const memberships = await ctx.db
+            .query("conversationMembers")
+            .withIndex("by_userId", (q) => q.eq("userId", args.userId))
             .collect();
 
-        // Filter conversations where the user is a participant
-        // Note: In a real app, you'd use an index or search for efficiency
-        const myConversations = conversations.filter(c => c.participants.includes(args.userId));
-
         const conversationsWithDetails = await Promise.all(
-            myConversations.map(async (c) => {
+            memberships.map(async (member) => {
+                const c = await ctx.db.get(member.conversationId);
+                if (!c) return null;
+
                 const otherParticipantId = c.participants.find((p) => p !== args.userId);
                 const otherParticipant = otherParticipantId
                     ? await ctx.db.get(otherParticipantId)
@@ -52,22 +53,16 @@ export const get = query({
                     ? await ctx.db.get(c.lastMessageId)
                     : null;
 
-                const memberInfo = await ctx.db
-                    .query("conversationMembers")
-                    .withIndex("by_conversationId_userId", (q) =>
-                        q.eq("conversationId", c._id).eq("userId", args.userId)
-                    )
-                    .unique();
-
                 return {
                     ...c,
                     otherParticipant,
                     lastMessage,
-                    unreadCount: memberInfo?.unreadCount || 0,
+                    unreadCount: member.unreadCount,
                 };
             })
         );
 
-        return conversationsWithDetails;
+        // Filter out any null conversations (e.g. if a conversation was deleted but membership remains)
+        return conversationsWithDetails.filter((c): c is NonNullable<typeof c> => c !== null);
     },
 });
