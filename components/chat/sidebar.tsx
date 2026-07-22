@@ -24,7 +24,7 @@ export function Sidebar({ onSelectConversation }: { onSelectConversation: (id: a
         <div className="w-80 h-full border-r flex flex-col bg-white">
             <div className="p-4 border-b flex items-center justify-between bg-slate-50">
                 <h1 className="font-bold text-xl text-indigo-600">Tars Chat</h1>
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
             </div>
 
             <div className="p-4">
