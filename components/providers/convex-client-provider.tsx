@@ -12,10 +12,12 @@ const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 function GuestSignInButton() {
     const { isLoaded, signIn, setActive } = useSignIn();
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleGuestLogin = async () => {
         if (!isLoaded || isLoading) return;
         setIsLoading(true);
+        setError(null);
         try {
             const result = await signIn.create({
                 identifier: "guest@tars-chat.com",
@@ -23,22 +25,33 @@ function GuestSignInButton() {
             });
             if (result.status === "complete") {
                 await setActive({ session: result.createdSessionId });
+            } else {
+                setError(`Sign-in status: ${result.status}`);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Guest login failed:", err);
+            const errMsg = err?.errors?.[0]?.message || err?.message || "An unexpected error occurred.";
+            setError(errMsg);
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <button
-            onClick={handleGuestLogin}
-            disabled={isLoading}
-            className="w-full max-w-[400px] py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold shadow-md transition-all active:scale-95 text-sm"
-        >
-            {isLoading ? "Signing in..." : "Sign in as Guest Recruiter (One-click)"}
-        </button>
+        <div className="w-full max-w-[400px] flex flex-col gap-2 items-center">
+            <button
+                onClick={handleGuestLogin}
+                disabled={isLoading}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold shadow-md transition-all active:scale-95 text-sm"
+            >
+                {isLoading ? "Signing in..." : "Sign in as Guest Recruiter (One-click)"}
+            </button>
+            {error && (
+                <p className="text-xs text-red-500 font-semibold text-center mt-1 bg-red-50 p-2 rounded-lg border border-red-200 w-full">
+                    ⚠️ {error}
+                </p>
+            )}
+        </div>
     );
 }
 
