@@ -63,6 +63,6 @@ export const get = query({
         );
 
         // Filter out any null conversations (e.g. if a conversation was deleted but membership remains)
-        return conversationsWithDetails.filter((c): c is NonNullable<typeof c> => c !== null);
+        return conversationsWithDetails.filter((c) => c !== null) as any;
     },
 });
