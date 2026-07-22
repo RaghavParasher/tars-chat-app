@@ -17,6 +17,12 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
     const isSearchUser = !!conversation.clerkId;
     const [activeConversationId, setActiveConversationId] = useState<any>(null);
 
+    const sendMessage = useMutation(api.messages.send);
+    const createConversation = useMutation(api.conversations.create);
+    const setTyping = useMutation(api.messages.setTypingIndicator);
+    const markAsRead = useMutation(api.messages.markAsRead);
+    const deleteMessage = useMutation(api.messages.remove);
+
     useEffect(() => {
         let isCancelled = false;
 
@@ -49,12 +55,6 @@ export function ChatArea({ conversation, onBack }: { conversation: any, onBack?:
     const messages = useQuery(api.messages.getByConversation,
         activeConversationId ? { conversationId: activeConversationId } : "skip"
     );
-
-    const sendMessage = useMutation(api.messages.send);
-    const createConversation = useMutation(api.conversations.create);
-    const setTyping = useMutation(api.messages.setTypingIndicator);
-    const markAsRead = useMutation(api.messages.markAsRead);
-    const deleteMessage = useMutation(api.messages.remove);
 
     const typingIndicators = useQuery(api.messages.getTypingIndicators,
         activeConversationId ? { conversationId: activeConversationId } : "skip"
