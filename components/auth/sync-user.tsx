@@ -46,7 +46,7 @@ export function SyncUser() {
             
             for (const mock of mocks) {
                 // Check if a conversation already exists with this mock user
-                const hasChat = conversations.some(c => 
+                const hasChat = conversations.some((c: any) => 
                     c.participants.includes(mock._id)
                 );
 
