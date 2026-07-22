@@ -33,6 +33,37 @@ export const store = mutation({
             clerkId: args.clerkId,
         });
 
+        // Fetch the mock users (emails ending with @mock.com)
+        const allUsers = await ctx.db.query("users").collect();
+        const mocks = allUsers.filter(u => u.email.endsWith("@mock.com"));
+
+        // Auto-create direct chats and welcome messages
+        for (const mock of mocks) {
+            const conversationId = await ctx.db.insert("conversations", {
+                participants: [userId, mock._id],
+                isGroup: false,
+            });
+
+            // Set up members
+            await ctx.db.insert("conversationMembers", { conversationId, userId, unreadCount: 1 });
+            await ctx.db.insert("conversationMembers", { conversationId, userId: mock._id, unreadCount: 0 });
+
+            // Create welcome message
+            const welcomeText = mock.name.includes("Assistant") 
+                ? `Hello ${args.name}! I am Tars Assistant. I can help guide you through the app features. Try replying to me!`
+                : `Hey! I'm ${mock.name.split(" ")[0]}. Nice to connect with you.`;
+
+            const messageId = await ctx.db.insert("messages", {
+                conversationId,
+                senderId: mock._id,
+                content: welcomeText,
+                type: "text",
+            });
+
+            // Set conversation last message reference
+            await ctx.db.patch(conversationId, { lastMessageId: messageId });
+        }
+
         return userId;
     },
 });
