@@ -10,6 +10,10 @@ A premium, high-fidelity real-time chat application built for the **Tars Full-St
 
 🌐 **Live Deployment**: [https://tars-chat-app-hrin.vercel.app/](https://tars-chat-app-hrin.vercel.app/)
 
+<br/>
+<img src="./mockup.jpg" width="100%" alt="Tars Chat Dashboard Mockup" />
+<br/>
+
 ---
 
 ## ✨ Key Features
